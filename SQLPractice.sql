@@ -783,3 +783,477 @@ SELECT ocjene.* FROM zupanije AS zupStan
 	AND zupUstanove.id != zupPreb.id
 	AND zupUstanove.id != zupStan.id
 	AND zupUstanove.id != zupNast.id;
+
+LABOS 7
+SELECT odjel.nazivOdjel, kvar.sifOdjel, SUM(kvar.satiKvar) AS brojSati, SUM(kvar.brojRadnika) AS brojRadnik
+FROM kvar
+INNER JOIN odjel ON kvar.sifOdjel = odjel.sifOdjel
+GROUP BY odjel.nazivOdjel, kvar.sifOdjel
+HAVING brojSati > 1
+ORDER BY brojRadnik ASC LIMIT 5;
+
+SELECT mjesto.pbrMjesto, mjesto.nazivMjesto, SUM(radnik.IznosOsnovice * radnik.KoefPlaca) AS placaRadnik
+FROM radnik
+INNER JOIN mjesto ON radnik.pbrStan = mjesto.pbrMjesto
+GROUP BY mjesto.pbrMjesto, mjesto.nazivMjesto
+LIMIT 5;
+
+SELECT odjel.sifOdjel, odjel.nazivOdjel, COUNT(kvar.sifKvar) AS brojKvar
+FROM odjel
+LEFT JOIN kvar ON odjel.sifOdjel = kvar.sifOdjel
+GROUP BY odjel.sifOdjel, odjel.nazivOdjel
+ORDER BY brojKvar ASC;
+
+SELECT mjesta.postbr, mjesta.nazivMjesto, COUNT(studenti.jmbag) AS brojStudent
+FROM mjesta
+LEFT JOIN studenti ON mjesta.postbr = studenti.postBrStanovanja
+GROUP BY mjesta.postbr, mjesta.nazivMjesto
+HAVING brojStudent < 10
+LIMIT 20;
+
+SELECT zupanije.id, zupanije.nazivZupanija, AVG(ocjene.ocjena) AS prosjekOcjena
+FROM zupanije
+INNER JOIN mjesta ON zupanije.id = mjesta.idZupanija
+INNER JOIN studenti ON mjesta.postbr = studenti.postBrStanovanja
+INNER JOIN ocjene ON studenti.jmbag = ocjene.jmbagStudent
+GROUP BY zupanije.id, zupanije.nazivZupanija
+ORDER BY prosjekOcjena DESC
+LIMIT 10;
+
+SELECT ustanove.oib, ustanove.naziv, COUNT(nastavnici.jmbg) AS brojNastavnik
+FROM ustanove 
+INNER JOIN smjerovi ON ustanove.oib = smjerovi.oibUstanova
+INNER JOIN kolegiji ON smjerovi.id = kolegiji.idSmjer
+INNER JOIN izvrsitelji ON kolegiji.id = izvrsitelji.idKolegij
+INNER JOIN ulogaizvrsitelja ON izvrsitelji.idUlogaIzvrsitelja = ulogaizvrsitelja.id
+INNER JOIN nastavnici ON izvrsitelji.jmbgNastavnik = nastavnici.jmbg
+WHERE ulogaIzvrsitelja.naziv = 'asistent'
+GROUP BY ustanove.naziv, ustanove.oib
+ORDER BY brojNastavnik ASC;
+
+SELECT ustanove.oib, ustanove.naziv, smjerovi.id, smjerovi.naziv, COUNT(kolegiji.id) AS brojKolegij
+FROM ustanove
+JOIN mjesta ON mjesta.postbr = ustanove.postbr
+LEFT JOIN smjerovi ON ustanove.oib = smjerovi.oibUstanova
+LEFT JOIN kolegiji ON smjerovi.id = kolegiji.idSmjer
+WHERE mjesta.nazivMjesto = "Zagreb"
+GROUP BY ustanove.oib, ustanove.naziv, smjerovi.id, smjerovi.naziv
+ORDER BY  ustanove.naziv ASC, smjerovi.naziv ASC;
+
+SELECT zupanija.sifZupanija, zupanija.nazivZupanija, COUNT(klijent.pbrReg) AS brojReg
+FROM zupanija
+LEFT JOIN mjesto ON zupanija.sifZupanija = mjesto.sifZupanija
+LEFT JOIN klijent ON mjesto.pbrMjesto = klijent.pbrReg
+GROUP BY zupanija.sifZupanija, zupanija.nazivZupanija
+ORDER BY brojReg DESC;
+SELECT zupanije.id, zupanije.nazivZupanija, COUNT(nastavnici.jmbg) AS brojNast
+FROM zupanije
+LEFT JOIN mjesta ON zupanije.id = mjesta.idZupanija
+LEFT JOIN nastavnici ON mjesta.postbr = nastavnici.postBr
+WHERE zupanije.nazivZupanija LIKE "D%"
+GROUP BY zupanije.id, zupanije.nazivZupanija
+ORDER BY brojNast;
+
+SELECT zupanije.id, zupanije.nazivZupanija, COUNT(nastavnici.jmbg) AS brojAsistent
+FROM zupanije
+INNER JOIN mjesta ON zupanije.id = mjesta.idZupanija
+INNER JOIN nastavnici ON mjesta.postbr = nastavnici.postBr
+INNER JOIN izvrsitelji ON izvrsitelji.jmbgNastavnik = nastavnici.jmbg
+INNER JOIN ulogaizvrsitelja ON izvrsitelji.idUlogaIzvrsitelja = ulogaizvrsitelja.id
+WHERE ulogaizvrsitelja.naziv = "asistent"
+GROUP BY zupanije.id, zupanije.nazivZupanija
+HAVING brojAsistent > 3
+ORDER BY brojAsistent DESC;
+
+SELECT mjesta.postbr, mjesta.nazivMjesto, AVG(ocjene.ocjena) AS prosjekOcjena
+FROM mjesta
+INNER JOIN ustanove ON ustanove.postbr = mjesta.postbr
+INNER JOIN smjerovi ON ustanove.oib = smjerovi.oibUstanova
+INNER JOIN kolegiji ON kolegiji.idSmjer = smjerovi.id
+INNER JOIN ocjene ON kolegiji.id = ocjene.idKolegij
+WHERE ocjena != 1 AND ocjena != 5
+GROUP BY mjesta.postbr, mjesta.nazivMjesto
+HAVING prosjekOcjena > 3
+ORDER BY prosjekOcjena DESC;
+
+SELECT zupanija.sifZupanija, zupanija.nazivZupanija, IFNULL(AVG(radnik.IznosOsnovice * radnik.KoefPlaca), 0) AS ProsjecnaPlaca
+FROM zupanija
+LEFT JOIN mjesto ON zupanija.sifZupanija = mjesto.sifZupanija
+LEFT JOIN radnik ON mjesto.pbrMjesto = radnik.pbrStan
+WHERE zupanija.nazivZupanija LIKE '%d%'
+GROUP BY zupanija.sifZupanija, zupanija.nazivZupanija
+ORDER BY ProsjecnaPlaca DESC;
+
+SELECT radionica.oznRadionica, SUM(nalog.OstvareniSatiRada) AS utroseniSati FROM nalog
+LEFT JOIN kvar ON kvar.sifKvar = nalog.sifKvar
+LEFT JOIN rezervacija ON rezervacija.sifKvar = kvar.sifKvar
+LEFT JOIN radionica ON radionica.oznRadionica = rezervacija.oznRadionica
+GROUP BY radionica.oznRadionica
+ORDER BY utroseniSati DESC
+LIMIT 5;
+
+SELECT mjesta.postbr, mjesta.nazivMjesto, AVG(ocjene.ocjena) AS prosjekOcjena
+FROM mjesta
+INNER JOIN studenti ON mjesta.postbr = studenti.postBrStanovanja
+INNER JOIN ocjene ON studenti.jmbag = ocjene.jmbagStudent
+WHERE MONTH(ocjene.datumPolaganja) = 6
+AND YEAR(ocjene.datumPolaganja) = YEAR(CURDATE()) - 2
+GROUP BY mjesta.postbr, mjesta.nazivMjesto
+ORDER BY mjesta.nazivMjesto ASC
+LIMIT 10;
+
+SELECT COUNT(radnik.sifRadnik) AS brojRadnika, zupanija.nazivZupanija
+FROM radnik
+RIGHT JOIN mjesto ON radnik.pbrStan = mjesto.pbrMjesto
+RIGHT JOIN zupanija ON mjesto.sifZupanija = zupanija.sifZupanija
+WHERE LENGTH(mjesto.nazivMjesto) < 12
+GROUP BY zupanija.sifZupanija, zupanija.nazivZupanija
+HAVING brojRadnika < 5
+ORDER BY brojRadnika ASC
+LIMIT 10;
+ 
+ 
+SELECT COUNT(klijent.sifKlijent) AS brojKlijenata, zupanija.nazivZupanija
+FROM klijent
+RIGHT JOIN mjesto ON klijent.pbrKlijent = mjesto.pbrMjesto
+RIGHT JOIN zupanija ON mjesto.sifZupanija = zupanija.sifZupanija
+WHERE SUBSTRING(mjesto.nazivMjesto, 3, 1) = 'i'
+GROUP BY zupanija.sifZupanija, zupanija.nazivZupanija
+HAVING brojKlijenata < 5
+ORDER BY brojKlijenata DESC
+LIMIT 5;
+
+SELECT studenti.jmbag, studenti.ime, studenti.prezime, AVG(ocjene.ocjena) AS prosjekOcj
+FROM studenti
+JOIN mjesta ON mjesta.postbr = studenti.postBrPrebivanje
+JOIN ocjene ON studenti.jmbag = jmbagStudent
+WHERE mjesta.nazivMjesto = "Zagreb"
+GROUP BY studenti.jmbag
+LIMIT 5;
+
+SELECT kolegiji.id, kolegiji.naziv, MIN(ocjene.ocjena) AS minOcjena
+FROM kolegiji
+JOIN ocjene ON ocjene.idKolegij = kolegiji.id
+GROUP BY kolegiji.id, kolegiji.naziv
+ORDER BY minOcjena ASC;
+
+SELECT studenti.jmbag, studenti.ime, studenti.prezime, AVG(ocjene.ocjena) AS prosjekOcj
+FROM studenti
+JOIN ocjene ON ocjene.jmbagStudent = studenti.jmbag
+JOIN kolegiji ON ocjene.idKolegij = kolegiji.id
+JOIN smjerovi ON kolegiji.idSmjer = smjerovi.id
+JOIN ustanove ON smjerovi.oibUstanova = ustanove.oib
+WHERE ustanove.naziv = "Međimursko veleučilište u Čakovcu"
+GROUP BY studenti.jmbag
+ORDER BY prosjekOcj DESC
+LIMIT 10;
+
+SELECT kolegiji.id, kolegiji.naziv, MIN(ocjene.ocjena) AS minOcjena
+FROM kolegiji
+JOIN ocjene ON ocjene.idKolegij = kolegiji.id
+GROUP BY kolegiji.id, kolegiji.naziv
+ORDER BY kolegiji.naziv ASC;
+
+SELECT zupanije.id, zupanije.nazivZupanija, COUNT(mjesta.postBr) AS brojGrad
+FROM zupanije
+JOIN mjesta ON mjesta.idZupanija = zupanije.id
+GROUP BY zupanije.id, zupanije.nazivZupanija
+ORDER BY zupanije.nazivZupanija ASC;
+
+SELECT zupanija.sifZupanija, zupanija.nazivZupanija, SUM(nalog.OstvareniSatiRada) AS satiRada
+FROM zupanija
+JOIN mjesto ON zupanija.sifZupanija = mjesto.pbrMjesto
+JOIN radnik ON mjesto.pbrMjesto = radnik.pbrStan
+JOIN nalog ON radnik.sifRadnik = nalog.sifRadnik
+GROUP BY zupanija.sifZupanija, zupanija.nazivZupanija
+LIMIT 5;
+
+SELECT odjel.sifOdjel, odjel.nazivOdjel, COUNT(sifRadnik)
+FROM odjel
+INNER JOIN radnik ON odjel.sifOdjel = radnik.sifOdjel
+GROUP BY odjel.sifOdjel, odjel.nazivOdjel
+ORDER BY odjel.nazivOdjel ASC LIMIT 10;
+
+SELECT studenti.jmbag, studenti.ime, studenti.prezime, AVG(ocjene.ocjena) AS prosjekOcj
+FROM studenti
+JOIN ocjene ON ocjene.jmbagStudent = studenti.jmbag
+GROUP BY studenti.jmbag
+HAVING prosjekOcj >= 3.00 AND prosjekOcj <= 4.5
+ORDER BY prosjekOcj ASC;
+
+SELECT mjesto.* FROM mjesto
+WHERE mjesto.pbrMjesto NOT IN (SELECT radnik.pbrStan FROM radnik);
+
+SELECT studenti.* FROM studenti
+JOIN ocjene ON studenti.jmbag = ocjene.jmbagStudent
+WHERE ocjene.ocjena > (SELECT AVG(ocjene.ocjena) FROM ocjene);
+
+SELECT radionica.* FROM radionica
+WHERE kapacitetRadnika > 4 * (SELECT MAX(rezervacija.satServis) FROM rezervacija);
+
+DELETE FROM nalog
+WHERE sifKlijent IN (
+    SELECT klijent.sifKlijent
+    FROM klijent
+    JOIN mjesto ON klijent.pbrKlijent = mjesto.pbrMjesto
+    WHERE mjesto.nazivMjesto = 'Zagreb'
+);
+
+DELETE FROM izvrsitelji
+WHERE jmbgNastavnik IN (
+	SELECT nastavnici.jmbg FROM nastavnici
+	WHERE nastavnici.ime LIKE "D%");
+	
+UPDATE nastavnici.titulaIspred
+SET nastavnici.titulaIspred = "pred."
+WHERE nastavnici.jmbg IN (
+	SELECT nastavnici.jmbg FROM nastavnici
+	JOIN izvrsitelji ON nastavnici.jmbg = izvrsitelji.jmbgNastavnik
+	JOIN kolegiji ON izvrsitelji.idKolegij = kolegiji.id
+	JOIN smjerovi ON kolegiji.idSmjer = smjerovi.id
+	JOIN ustanove ON smjerovi.oibUstanova = ustanove.oib
+	WHERE ustanove.naziv = "Tehničko Veleučilište u Zagrebu");
+	
+SELECT DISTINCT studenti.* FROM studenti
+JOIN ocjene ON ocjene.jmbagStudent = studenti.jmbag
+WHERE ocjene.ocjena = (
+	SELECT MIN(ocjena) FROM ocjene);
+	
+SELECT studenti.* FROM studenti
+JOIN ocjene ON ocjene.jmbagStudent = studenti.jmbag
+WHERE ocjene.datumPolaganja = (
+	SELECT MAX(datumPolaganja) FROM ocjene);
+	
+SELECT * FROM kvar
+JOIN nalog ON kvar.sifKvar = nalog.sifKvar
+WHERE datPrimitkaNalog = (
+	SELECT MAX(datPrimitkaNalog) FROM nalog);
+
+SELECT radnik.sifRadnik, radnik.imeRadnik, radnik.prezimeRadnik FROM radnik
+JOIN nalog ON radnik.sifRadnik = nalog.sifRadnik
+GROUP BY radnik.sifRadnik, radnik.imeRadnik, radnik.prezimeRadnik
+HAVING AVG(OstvareniSatiRada) > (
+	SELECT AVG(OstvareniSatiRada) FROM nalog);
+	
+
+SELECT * FROM studenti
+WHERE jmbag IN (
+    SELECT DISTINCT jmbagStudent
+    FROM ocjene
+    WHERE YEAR(datumPolaganja) = YEAR(CURDATE()) - 1
+    GROUP BY jmbagStudent
+    HAVING AVG(ocjena) BETWEEN (SELECT AVG(ocjena) * 0.8 FROM ocjene WHERE YEAR(datumPolaganja) = YEAR(CURDATE()) - 1) 
+    AND (SELECT AVG(ocjena) * 1.2 FROM ocjene WHERE YEAR(datumPolaganja) = YEAR(CURDATE()) - 1)
+);
+
+SELECT *
+FROM kolegiji
+WHERE id IN (
+    SELECT DISTINCT idKolegij FROM ocjene
+    WHERE jmbagStudent IN (
+        SELECT jmbag
+        FROM studenti
+        WHERE datumUpisa = (SELECT MIN(datumUpisa) FROM studenti)));
+
+UPDATE studenti
+SET idSmjer = 1
+WHERE idSmjer IN (
+    SELECT id
+    FROM smjerovi
+    JOIN ustanove ON smjerovi.oibUstanova = ustanove.oib
+    WHERE ustanove.naziv = 'Tehničko Veleučilište u Zagrebu');
+
+SELECT nazivKvar, satiKvar FROM kvar
+WHERE satiKvar > ANY (SELECT satServis FROM rezervacija);
+
+DELETE FROM nalog
+WHERE sifKlijent IN (
+SELECT sifKlijent FROM klijent
+JOIN mjesto ON klijent.pbrKlijent = mjesto.pbrMjesto
+WHERE nazivMjesto = 'Zagreb');
+
+UPDATE studenti
+SET ime = 'Ivana'
+WHERE postBrStanovanja IN (
+    SELECT postbr FROM mjesta
+    JOIN zupanije ON mjesta.idZupanija = zupanije.id
+    WHERE zupanije.nazivZupanija = 'Grad Zagreb');
+    
+UPDATE studenti
+SET ime = 'Ivana'
+WHERE postBrStanovanja IN (
+    SELECT postbr
+    FROM mjesta
+    WHERE idZupanija IN (
+        SELECT id
+        FROM zupanije
+        WHERE nazivZupanija = 'Grad Zagreb'
+    )
+);
+
+SELECT * FROM radionica
+WHERE kapacitetRadnika > 4 * (SELECT  MAX(satServis) FROM rezervacija);
+
+SELECT * FROM studenti
+WHERE jmbag IN (
+    SELECT jmbagStudent
+    FROM ocjene
+    GROUP BY jmbagStudent
+    HAVING AVG(ocjena) > (
+        SELECT AVG(ocjena) FROM ocjene));
+
+SELECT * FROM nastavnici
+WHERE jmbg NOT IN (
+SELECT jmbgNastavnik FROM izvrsitelji);
+
+SELECT mjesta.*, 
+    (SELECT COUNT(*) FROM studenti WHERE postBrStanovanja = mjesta.postbr) AS broj_studenata_stanuje,
+    (SELECT COUNT(*) FROM studenti WHERE postBrPrebivanje = mjesta.postbr) AS broj_studenata_prebiva
+FROM mjesta;
+
+CREATE TABLE komentari(
+	sifKomentar INT PRIMARY KEY AUTO_INCREMENT,
+	naslovKomentar VARCHAR(100),
+	komentar TEXT,
+	sifKlijent INT,
+	INDEX (naslovKomentar) USING BTREE,
+	FOREIGN KEY (sifKlijent) REFERENCES klijent(sifKlijent)
+);
+DROP TABLE komentari;
+
+CREATE TABLE podsmjerovi (
+	idPodsmjer INT PRIMARY KEY AUTO_INCREMENT,
+	naziv VARCHAR(100),
+	opis TEXT,
+	idSmjer INT,
+	INDEX(naziv) USING BTREE,
+	FOREIGN KEY(idSmjer) REFERENCES smjerovi(id)
+);
+DROP TABLE podsmjerovi;
+
+CREATE TABLE osoblje (
+	idOsoba INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+	ime VARCHAR(100) NOT NULL,
+	prezime VARCHAR(100) NOT NULL,
+	opisPoslova TEXT NOT NULL,
+	oibUstanova CHAR(11) CHARSET cp1250 COLLATE cp1250_croatian_ci NOT NULL,
+	INDEX(ime, prezime) USING BTREE,
+	FOREIGN KEY(oibUstanova) REFERENCES ustanove(oib)
+);
+DROP TABLE osoblje;
+
+CREATE INDEX ix_ime_prezime ON radnik(imeRadnik, prezimeRadnik) USING BTREE;
+DROP INDEX ix_ime_prezime ON radnik;
+
+CREATE INDEX ix_prezime ON studenti(prezime) USING BTREE;
+DROP INDEX ix_prezime ON studenti;
+
+CREATE INDEX ix_naziv ON kolegiji(naziv) USING BTREE;
+DROP INDEX ix_naziv ON kolegiji;
+
+CREATE FULLTEXT INDEX ix_nazivKvar ON kvar(nazivKvar);
+SELECT * FROM kvar WHERE MATCH(nazivKvar) AGAINST ('Zamjena' IN NATURAL LANGUAGE MODE);
+
+CREATE FULLTEXT INDEX ix_opis ON kolegiji(opis);
+SELECT kolegiji.*, MATCH(opis) AGAINST ('savladati' IN NATURAL LANGUAGE MODE) AS rang FROM kolegiji
+HAVING rang > 0 ORDER BY rang DESC;
+
+CREATE FULLTEXT INDEX ix_adresa ON nastavnici(adresa);
+SELECT nastavnici.*, MATCH(adresa) AGAINST ('ulica' IN NATURAL LANGUAGE MODE) AS rang FROM nastavnici
+HAVING rang > 0  ORDER BY rang DESC;
+
+CREATE FULLTEXT INDEX ix_nastavnici_adresa ON nastavnici(adresa);
+SELECT nastavnici.*, MATCH(adresa) 
+AGAINST('ulica' IN NATURAL LANGUAGE MODE) AS rang
+FROM nastavnici
+HAVING rang>0
+ORDER BY rang DESC;
+
+CREATE TABLE knjige (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    isbn CHAR(13) NOT NULL,
+    naziv VARCHAR(100),
+    opis TEXT,
+    brojStranica INT,
+    koautori VARCHAR(100),
+    jmbgNastavnik CHAR(13) CHARSET cp1250 COLLATE cp1250_croatian_ci,
+    oibUstanovaIzdavanja CHAR(11)  CHARSET cp1250 COLLATE cp1250_croatian_ci,
+    UNIQUE INDEX (isbn) USING BTREE,
+    FOREIGN KEY (jmbgNastavnik) REFERENCES nastavnici(jmbg),
+    FOREIGN KEY (oibUstanovaIzdavanja) REFERENCES ustanove(oib)
+);
+
+INSERT INTO knjige (isbn, naziv, opis, brojStranica, koautori, jmbgNastavnik, oibUstanovaIzdavanja)
+VALUES ('9781234567897', 'Uvod u Baze Podataka', 'Minus bodovi za koristenje chatgpta u predmetu baze podataka', 350, 'Tin Kramberger, Davor Cafuta', '1234567890123', '23456789011');
+
+SELECT * FROM knjige
+WHERE MATCH(opis) AGAINST ('Cafuta i 7 obroka' IN NATURAL LANGUAGE MODE);
+
+SELECT *, MATCH(opis) AGAINST ('Kako raditi što manje by Ivica Dodig' IN NATURAL LANGUAGE MODE) AS rang
+FROM knjige
+WHERE MATCH(opis) AGAINST ('Kako raditi što manje by Ivica Dodig' IN NATURAL LANGUAGE MODE)
+ORDER BY rang DESC;
+
+CREATE TABLE automobil (
+    brSasije VARCHAR(17) PRIMARY KEY,
+    marka VARCHAR(200),
+    model VARCHAR(250),
+    biljeske TEXT,
+    godinaProizvodnje INT,
+    registarskaOznaka VARCHAR(12),
+    sifKlijent INT,
+    FOREIGN KEY (sifKlijent) REFERENCES klijent(sifKlijent)
+);
+CREATE UNIQUE INDEX idx_registarskaOznaka ON automobil (registarskaOznaka);
+
+CREATE TABLE ishodiUcenja (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ishod VARCHAR(250),
+    idKolegij INT,
+    razina INT,
+    INDEX idx_ishod (ishod) USING BTREE,
+    FOREIGN KEY (idKolegij) REFERENCES kolegiji(id)
+) COLLATE=cp1250_croatian_ci;
+
+CREATE FULLTEXT INDEX ftix_06 ON smjerovi(naziv);
+SELECT * FROM smjerovi WHERE MATCH (naziv) AGAINST ('smjer' IN NATURAL LANGUAGE MODE);
+
+CREATE TABLE vozilo (
+    sifVozilo INT AUTO_INCREMENT PRIMARY KEY,
+    brSasije CHAR(17),
+    registracija VARCHAR(10),
+    sifKlijent INT,
+    UNIQUE INDEX ix_brSasije (brSasije),
+    UNIQUE INDEX ix_registracija (registracija),
+    FOREIGN KEY (sifKlijent) REFERENCES klijent(sifKlijent)
+) COLLATE=cp1250_croatian_ci;
+
+CREATE INDEX ix_10 ON smjerovi (naziv, oibUstanova) USING BTREE;
+
+CREATE FULLTEXT INDEX ftix_03 ON klijent (imeKlijent, prezimeKlijent);
+SELECT * FROM klijent WHERE MATCH(imeKlijent, prezimeKlijent) AGAINST('Horvat' IN NATURAL LANGUAGE MODE);
+
+CREATE TABLE diplomirali (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ime VARCHAR(100),
+    prezime VARCHAR(100),
+    titula VARCHAR(10),
+    posPriz VARCHAR(50),
+    oibUstanove VARCHAR(11),
+    INDEX idx_posPriz (posPriz) USING BTREE,
+    FOREIGN KEY (oibUstanove) REFERENCES ustanove(oib)
+) COLLATE=cp1250_croatian_ci;
+DROP TABLE vozilo;
+
+CREATE TABLE vozilo (
+    sifVozilo INT AUTO_INCREMENT PRIMARY KEY,
+    brSasije CHAR(17),
+    registracija VARCHAR(10),
+    sifKlijent INT,
+    UNIQUE INDEX idx_brSasije (brSasije) USING BTREE,
+    UNIQUE INDEX idx_registracija (registracija) USING BTREE,
+    FOREIGN KEY (sifKlijent) REFERENCES klijent(sifKlijent)
+) COLLATE=cp1250_croatian_ci;
+
+CREATE FULLTEXT INDEX ftix_10 ON mjesta (nazivMjesto);
+SELECT * FROM mjesta WHERE MATCH(nazivMjesto) AGAINST ('Sisak' IN NATURAL LANGUAGE MODE);
